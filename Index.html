@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reise-Itinerary 2026</title>
+ <style>
+    :root {
+        --primary-red: #d32f2f;
+        --path-blue: #007bff;
+        --bg-color: #ffffff;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background-color: var(--bg-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Geändert für Mobile-Scroll */
+        min-height: 100vh;
+        width: 100vw;
+        overflow-x: hidden;
+    }
+
+    /* Standard Desktop: Kalender schwebt */
+    #calendar {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 180px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        text-align: center;
+        border: 1px solid #ccc;
+        z-index: 2000;
+    }
+
+    #cal-header {
+        background-color: var(--primary-red);
+        color: white;
+        padding: 8px;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-top-left-radius: 11px;
+        border-top-right-radius: 11px;
+        font-size: 0.85rem;
+    }
+
+    #cal-day {
+        font-size: 3.5rem;
+        font-weight: 800;
+        padding: 5px 0;
+        color: #222;
+        line-height: 1;
+    }
+
+    #cal-year {
+        padding-bottom: 5px;
+        color: #888;
+        font-size: 1rem;
+    }
+
+    #cal-location {
+        background-color: #f0f7ff;
+        color: var(--path-blue);
+        padding: 10px 8px;
+        font-weight: bold;
+        font-size: 0.85rem;
+        border-bottom-left-radius: 11px;
+        border-bottom-right-radius: 11px;
+        border-top: 1px solid #d9e8ff;
+        min-height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #map-container {
+        position: relative;
+        display: inline-block;
+        margin-top: 20px;
+        max-height: 70vh;
+    }
+
+    #bg-map {
+        display: block;
+        max-height: 70vh;
+        width: auto;
+        max-width: 100vw;
+        pointer-events: none;
+    }
+
+    #overlay-layer {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+    }
+
+    .marker-group {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translate(-50%, -100%);
+        z-index: 100;
+    }
+
+    .blue-dot {
+        width: 10px;
+        height: 10px;
+        background-color: var(--path-blue);
+        border: 2px solid white;
+        border-radius: 50%;
+        margin-top: -5px;
+    }
+
+    .label-stack {
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        margin-bottom: 2px;
+    }
+
+    .blue-label {
+        background-color: var(--path-blue);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+
+    #vehicle {
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        background-color: #111;
+        border: 2px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        z-index: 500;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+
+    #vehicle::after {
+        content: '🚗';
+        font-size: 18px;
+    }
+
+    #controls {
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+        z-index: 2000;
+        margin: 20px 0;
+    }
+
+    input[type=range] {
+        width: 100%;
+        accent-color: var(--path-blue);
+        cursor: pointer;
+    }
+
+    #date-label {
+        margin-top: 10px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    /* --- MOBILE OPTIMIERUNG --- */
+    @media (max-width: 768px) {
+        body {
+            justify-content: flex-start;
+            padding-top: 10px;
+        }
+
+        #calendar {
+            position: relative; /* Kalender rückt in den Fluss */
+            top: 0;
+            left: 0;
+            margin-bottom: 15px;
+            width: 90%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            height: 60px;
+        }
+
+        #cal-header {
+            width: 80px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top-right-radius: 0;
+            border-bottom-left-radius: 11px;
+        }
+
+        #cal-day {
+            font-size: 2rem;
+            padding: 0 15px;
+        }
+
+        #cal-year {
+            display: none; /* Jahr sparen wir uns für Platz */
+        }
+
+        #cal-location {
+            flex-grow: 1;
+            border-top: none;
+            border-left: 1px solid #ddd;
+            height: 100%;
+            padding: 5px;
+            font-size: 0.75rem;
+        }
+
+        #map-container {
+            max-height: 60vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+        }
+
+        #bg-map {
+            max-height: 60vh;
+            width: auto;
+            max-width: 100%;
+        }
+
+        .blue-label {
+            font-size: 8px; /* Kleinere Labels für Mobile */
+            padding: 1px 4px;
+        }
+
+        #vehicle {
+            width: 28px;
+            height: 28px;
+        }
+    }
+</style>
+</head>
+<body>
+
+    <div id="calendar">
+        <div id="cal-header">APRIL</div>
+        <div id="cal-day">23</div>
+        <div id="cal-year">2026</div>
+        <div id="cal-location">-</div>
+    </div>
+
+    <div id="map-container">
+        <img id="bg-map" src="Germany.png" alt="Germany.png fehlt">
+        <div id="overlay-layer"></div>
+        <div id="vehicle" style="display: none;"></div>
+    </div>
+
+    <div id="controls">
+        <input type="range" id="slider" min="0" max="28" value="0">
+        <div id="date-label">23. April 2026</div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('slider');
+        const calDay = document.getElementById('cal-day');
+        const calMonth = document.getElementById('cal-header');
+        const calLoc = document.getElementById('cal-location');
+        const dateLabel = document.getElementById('date-label');
+        const vehicle = document.getElementById('vehicle');
+        const overlayLayer = document.getElementById('overlay-layer');
+
+        const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+
+        // Berlin Y-Achse auf 31.2% korrigiert, um den Punkt nach unten zu schieben
+        const itinerary = [
+            { label: "Flug Boston – Keflavík", x: null, y: null },
+            { label: "Frankfurt (Terminal 2)", x: 33.5, y: 58.5 },
+            { label: "Seeheim (Eich)", x: 34.5, y: 62.0 },
+            { label: "Seeheim (Ralph)", x: 34.5, y: 62.0 },
+            { label: "3 Hrs Travel Day", x: 33.0, y: 69.0 },
+            { label: "Stuttgart (Nane)", x: 31.5, y: 77.0 },
+            { label: "Travel Day (Helga)", x: 43.0, y: 84.0 },
+            { label: "Huglfing (GroGro)", x: 55.0, y: 92.5 },
+            { label: "Huglfing (Friends)", x: 55.0, y: 92.5 },
+            { label: "Huglfing (Friends)", x: 55.0, y: 92.5 },
+            { label: "3+ Hrs Travel Day", x: 54.0, y: 83.0 },
+            { label: "Reisetag", x: 53.5, y: 78.0 }, 
+            { label: "Nennslingen (Pina & Werner)", x: 53.5, y: 74.0 },
+            { label: "2 Hrs Travel Day", x: 53.5, y: 70.0 },
+            { label: "Fürth (Eva & Reinhard)", x: 53.5, y: 66.5 },
+            { label: "6+ Hrs Travel Day", x: 65.0, y: 46.0 },
+            { label: "Berlin (Friends)", x: 76.5, y: 31.2 }, // Korrektur: Y erhöht (nach unten)
+            { label: "Berlin (Friends)", x: 76.5, y: 31.2 }, // Korrektur: Y erhöht (nach unten)
+            { label: "4 Hrs Travel Day", x: 61.0, y: 32.0 },
+            { label: "Lamspringe", x: 46.5, y: 38.0 },
+            { label: "3 Hrs Travel Day", x: 40.0, y: 38.0 },
+            { label: "Bad Salzuflen", x: 34.0, y: 37.0 },
+            { label: "3 Hrs Travel Day", x: 26.0, y: 42.0 },
+            { label: "Solingen-Gräfrath", x: 19.0, y: 47.5 },
+            { label: "2 Hrs Travel Day", x: 21.5, y: 52.0 },
+            { label: "Bad Hönningen (Marita)", x: 24.5, y: 56.0 },
+            { label: "3 Hrs Travel Day", x: 29.5, y: 59.0 },
+            { label: "Seeheim", x: 34.5, y: 62.0 },
+            { label: "Rückreise (Boston)", x: null, y: null }
+        ];
+
+        function update() {
+            const val = parseInt(slider.value);
+            const dateObj = new Date(2026, 3, 23); 
+            dateObj.setDate(dateObj.getDate() + val);
+            
+            calDay.textContent = dateObj.getDate();
+            calMonth.textContent = months[dateObj.getMonth()].toUpperCase();
+            dateLabel.textContent = dateObj.getDate() + ". " + months[dateObj.getMonth()] + " 2026";
+            
+            const entry = itinerary[val];
+            calLoc.textContent = entry ? entry.label : "-";
+
+            if (entry && entry.x !== null) {
+                vehicle.style.display = 'flex';
+                vehicle.style.left = entry.x + '%';
+                vehicle.style.top = entry.y + '%';
+            } else {
+                vehicle.style.display = 'none';
+            }
+
+            overlayLayer.innerHTML = '';
+            const groups = new Map();
+
+            for (let j = 0; j <= val; j++) {
+                const s = itinerary[j];
+                if (!s || s.x === null) continue;
+                const key = s.x + "_" + s.y;
+                if (!groups.has(key)) groups.set(key, []);
+                if (!groups.get(key).includes(s.label)) groups.get(key).push(s.label);
+            }
+
+            groups.forEach((labels, k) => {
+                const [x, y] = k.split('_');
+                const g = document.createElement('div');
+                g.className = 'marker-group';
+                g.style.left = x + '%';
+                g.style.top = y + '%';
+                const st = document.createElement('div');
+                st.className = 'label-stack';
+                labels.forEach(t => {
+                    const l = document.createElement('div');
+                    l.className = 'blue-label';
+                    l.textContent = t;
+                    st.appendChild(l);
+                });
+                const dot = document.createElement('div');
+                dot.className = 'blue-dot';
+                g.appendChild(st);
+                g.appendChild(dot);
+                overlayLayer.appendChild(g);
+            });
+        }
+
+        slider.addEventListener('input', update);
+        window.addEventListener('load', update);
+        update(); 
+    </script>
+</body>
+</html>
